@@ -182,19 +182,6 @@ This project demonstrates that:
 
 Fine-tuned MedSAM provides the strongest segmentation quality, supporting the importance of specialization even for powerful foundation models.
 
-## Citation
-
-If you use this code or find it helpful, please consider citing:
-
-```bibtex
-@misc{medsam_kvasir_2025,
-  title={Domain-Specific Fine-Tuning of MedSAM for Polyp Segmentation},
-  author={Ravichandran, Ashwin and Nagaraj, Rithvik Pranao},
-  year={2025},
-  note={CS 747 Deep Learning Project}
-}
-```
-
 ## License
 
 This project is for educational purposes. Please refer to the original MedSAM and Segment Anything Model licenses for their respective components.
