@@ -1,0 +1,4 @@
+data/
+myenv/
+segment-anything/
+*.pth

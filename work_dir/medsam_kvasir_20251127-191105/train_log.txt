@@ -1,0 +1,2 @@
+Epoch 001: train_loss=0.5385, val_loss=0.6219, val_dice=0.7054
+Epoch 002: train_loss=0.3528, val_loss=0.4273, val_dice=0.7987
