@@ -20,6 +20,8 @@ The primary goal is to test whether a foundation model pretrained on many modali
 | MedSAM (Generalist) | 0.9081 |
 | **MedSAM (Fine-Tuned)** | **0.9448** |
 
+![Model Comparison Bar Plot](work_dir/plots/model_comparison_dice_bar.png)
+
 ### Key Findings
 
 - The foundation model (MedSAM) performs strongly even zero-shot, achieving 0.9081 Dice score
