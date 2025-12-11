@@ -143,9 +143,6 @@ python -m src.train_finetune_medsam \
     --device cuda:0
 ```
 
-
-```
-
 ## Training Details
 
 ### Loss Functions
