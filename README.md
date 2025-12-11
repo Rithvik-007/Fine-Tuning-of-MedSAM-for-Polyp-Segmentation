@@ -1,158 +1,207 @@
-\documentclass[12pt]{article}
-\usepackage{graphicx}
-\usepackage{titlesec}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\usepackage{geometry}
-\geometry{margin=1in}
+# Domain-Specific Fine-Tuning of MedSAM for Polyp Segmentation
 
-\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+## Overview
 
-\title{\textbf{Domain-Specific Fine-Tuning of MedSAM for Polyp Segmentation}}
-\author{Ashwin Ravichandran \and Rithvik Pranao Nagaraj \\ CS 747 -- Deep Learning, Fall 2025}
-\date{}
+This project investigates how well the **MedSAM** medical foundation model generalizes to an under-represented modality (endoscopic polyp segmentation) and whether **domain-specific fine-tuning** improves its performance. We evaluate three models:
 
-\begin{document}
-\maketitle
-
-\section{Introduction}
-This project investigates how well the \textbf{MedSAM} medical foundation model generalizes to an under-represented modality (endoscopic polyp segmentation) and whether \textbf{domain-specific fine-tuning} improves its performance. We evaluate three models:
-
-\begin{itemize}[itemsep=4pt]
-    \item \textbf{Original MedSAM (Generalist)} -- pretrained on 1.57M medical image--mask pairs.
-    \item \textbf{Fine-Tuned MedSAM (Specialist)} -- adapted specifically to the Kvasir-SEG dataset.
-    \item \textbf{MedSamLike (Scratch Model)} -- a lighter ResNet-based baseline trained only on Kvasir.
-\end{itemize}
+- **Original MedSAM (Generalist)** -- Pretrained on 1.57M medical image-mask pairs, evaluated zero-shot
+- **Fine-Tuned MedSAM (Specialist)** -- Adapted specifically to the Kvasir-SEG dataset
+- **MedSamLike (Scratch Model)** -- A lighter ResNet-based baseline trained only on Kvasir
 
 The primary goal is to test whether a foundation model pretrained on many modalities can outperform or match specialized training, and how much fine-tuning improves its predictions on a narrow domain.
 
-\section{Dataset: Kvasir-SEG}
-The Kvasir-SEG dataset contains:
-\begin{itemize}[itemsep=3pt]
-    \item 1,000 RGB endoscopy images,
-    \item pixel-wise binary masks (polyp vs. background),
-    \item train/validation split: 880 / 120 images.
-\end{itemize}
+## Results
 
-All images were resized to $512\times512$ for the scratch model and $1024\times1024$ for MedSAM, following architectural requirements. Bounding boxes were computed from ground-truth masks for prompt generation.
+### Dice Score Comparison
 
-\section{Model Architectures}
+| Model | Mean Dice Score |
+|-------|----------------|
+| MedSamLike (Scratch) | 0.8640 |
+| MedSAM (Generalist) | 0.9081 |
+| **MedSAM (Fine-Tuned)** | **0.9448** |
 
-\subsection{MedSAM (Generalist)}
-The original MedSAM architecture includes:
-\begin{itemize}[itemsep=3pt]
-    \item ViT-B image encoder (from Segment Anything Model),
-    \item prompt encoder (for bounding boxes),
-    \item mask decoder with upsampling layers.
-\end{itemize}
-It was evaluated \textbf{zero-shot}, without training on Kvasir-SEG.
+### Key Findings
 
-\subsection{Fine-Tuned MedSAM}
-Fine-tuning followed the MedSAM paper:
-\begin{itemize}[itemsep=3pt]
-    \item prompt encoder frozen,
-    \item image encoder + mask decoder updated,
-    \item trained with Dice + BCE loss on the Kvasir train set.
-\end{itemize}
+- The foundation model (MedSAM) performs strongly even zero-shot, achieving 0.9081 Dice score
+- Fine-tuning provides a substantial improvement (+0.0367 Dice over generalist)
+- Training from scratch on a small dataset performs reasonably but cannot match foundation models
+- Fine-tuned MedSAM provides the strongest segmentation quality, supporting the importance of specialization even for powerful foundation models
 
-\subsection{MedSamLike (Scratch Model)}
+## Dataset: Kvasir-SEG
+
+The Kvasir-SEG dataset contains: (can be downloaded from kaggle)
+- 1,000 RGB endoscopy images
+- Pixel-wise binary masks (polyp vs. background)
+- Train/validation split: 880 / 120 images
+
+All images were resized to:
+- `512×512` for the scratch model
+- `1024×1024` for MedSAM (following architectural requirements)
+
+Bounding boxes were computed from ground-truth masks for prompt generation.
+
+## Model Architectures
+
+### MedSAM (Generalist)
+- ViT-B image encoder (from Segment Anything Model)
+- Prompt encoder (for bounding boxes)
+- Mask decoder with upsampling layers
+- Evaluated **zero-shot**, without training on Kvasir-SEG
+
+### Fine-Tuned MedSAM
+Fine-tuning follows the MedSAM paper methodology:
+- Prompt encoder frozen
+- Image encoder + mask decoder updated
+- Trained with Dice + BCE loss on the Kvasir train set
+
+### MedSamLike (Scratch Model)
 A smaller custom segmentation model built with:
-\begin{itemize}[itemsep=2pt]
-    \item ResNet-based encoder,
-    \item lightweight convolutional decoder,
-    \item bounding-box prompt embedding.
-\end{itemize}
-Trained from scratch for 40--50 epochs.
+- ResNet-based encoder
+- Lightweight convolutional decoder
+- Bounding-box prompt embedding
+- Trained from scratch for 40-50 epochs
 
-\section{Training Pipeline}
-\subsection{Loss Functions}
-We used:
-\begin{itemize}[itemsep=3pt]
-    \item \textbf{Dice Loss} (handles class imbalance),
-    \item \textbf{Binary Cross-Entropy Loss}.
-\end{itemize}
+## Installation
 
-\subsection{Evaluation Metric}
-All models were evaluated using the \textbf{Dice coefficient}:
+### Prerequisites
+
+- Python >= 3.8
+- PyTorch >= 1.7 (with CUDA support recommended)
+- CUDA-capable GPU (recommended)
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd Project
+```
+
+2. Install Segment Anything:
+```bash
+cd segment-anything
+pip install -e .
+cd ..
+```
+
+3. Install additional dependencies:
+```bash
+pip install torch torchvision matplotlib opencv-python tqdm
+```
+
+4. Download the MedSAM checkpoint:
+   - Download `medsam_vit_b.pth` from the [MedSAM repository](https://github.com/bowang-lab/MedSAM)
+   - Place it in `work_dir/MedSAM/medsam_vit_b.pth`
+
+5. Prepare the dataset:
+   - Download the Kvasir-SEG dataset
+   - Extract it to `data/Kvasir-SEG/` with the following structure:
+     ```
+     data/Kvasir-SEG/
+     ├── images/
+     ├── masks/
+     ├── train.txt
+     └── val.txt
+     ```
+
+## Usage
+
+### Training Scratch Model (MedSamLike)
+
+Train the custom ResNet-based model from scratch:
+
+```bash
+python -m src.train_medsam_kvasir --data_root data/Kvasir-SEG --device cuda:0
+```
+
+Optional arguments:
+- `--epochs`: Number of training epochs (default: 50)
+- `--batch_size`: Batch size (default: 2)
+- `--lr`: Learning rate (default: 1e-4)
+
+### Evaluating Original MedSAM (Zero-Shot)
+
+Evaluate the pretrained MedSAM model without fine-tuning:
+
+```bash
+python -m src.eval_original_medsam_kvasir \
+    --data_root data/Kvasir-SEG \
+    --checkpoint work_dir/MedSAM/medsam_vit_b.pth \
+    --device cuda:0
+```
+
+### Fine-Tuning MedSAM
+
+Fine-tune the MedSAM model on Kvasir-SEG:
+
+```bash
+python -m src.train_finetune_medsam \
+    --checkpoint work_dir/MedSAM/medsam_vit_b.pth \
+    --data_root data/Kvasir-SEG \
+    --device cuda:0
+```
+
+
+```
+
+## Training Details
+
+### Loss Functions
+
+- **Dice Loss**: Handles class imbalance effectively
+- **Binary Cross-Entropy Loss**: Standard pixel-wise classification loss
+
+Combined loss: `L = Dice_Loss + BCE_Loss`
+
+### Evaluation Metric
+
+All models are evaluated using the **Dice coefficient**:
+
 \[
 \text{Dice} = \frac{2|P \cap G|}{|P| + |G|}
 \]
-where $P$ is the predicted mask and $G$ is the ground-truth mask.
 
-\section{Results}
+where \(P\) is the predicted mask and \(G\) is the ground-truth mask.
 
-\subsection{Dice Score Comparison}
-\begin{center}
-\begin{tabular}{|l|c|}
-\hline
-\textbf{Model} & \textbf{Mean Dice Score} \\
-\hline
-MedSamLike (Scratch) & 0.8640 \\
-MedSAM (Generalist) & 0.9081 \\
-MedSAM (Fine-Tuned) & \textbf{0.9448} \\
-\hline
-\end{tabular}
-\end{center}
+### Visual Comparisons
 
-\subsection{Interpretation}
-\begin{itemize}
-    \item The foundation model (MedSAM) performs strongly even zero-shot.
-    \item Fine-tuning gives a substantial improvement (+0.0367 Dice over generalist).
-    \item Training from scratch on a small dataset performs reasonably but cannot match foundation models.
-\end{itemize}
+Side-by-side comparison grids are generated showing:
+- Original image
+- Ground truth mask
+- Scratch model prediction
+- MedSAM (generalist) prediction
+- MedSAM (fine-tuned) prediction
 
-\section{Visual Comparisons}
-Side-by-side comparison grids were generated showing:
-\begin{itemize}[itemsep=3pt]
-    \item original image,
-    \item ground truth,
-    \item scratch model prediction,
-    \item MedSAM (generalist) prediction,
-    \item MedSAM (fine-tuned) prediction.
-\end{itemize}
+Example outputs are saved in `work_dir/vis_comparison/compare_*.png`
 
-Example file locations:
-\begin{itemize}
-    \item \texttt{work\_dir/vis\_comparison/compare\_0001.png}
-\end{itemize}
-
-\section{Reproducibility}
-
-\subsection{Training Scratch Model}
-\begin{verbatim}
-python -m src.train_medsam_kvasir --data_root data/Kvasir-SEG --device cuda:0
-\end{verbatim}
-
-\subsection{Evaluating Generalist MedSAM}
-\begin{verbatim}
-python -m src.eval_original_medsam_kvasir --checkpoint work_dir/MedSAM/medsam_vit_b.pth
-\end{verbatim}
-
-\subsection{Fine-Tuning MedSAM}
-\begin{verbatim}
-python -m src.train_finetune_medsam --checkpoint work_dir/MedSAM/medsam_vit_b.pth
-\end{verbatim}
-
-\subsection{Dice Comparison Plot}
-\begin{verbatim}
-python -m src.plot_from_checkpoints --device cuda:0
-\end{verbatim}
-
-\section{Conclusion}
+## Conclusion
 This project demonstrates that:
-\begin{itemize}[itemsep=3pt]
-    \item MedSAM generalizes well across unseen modalities,
-    \item fine-tuning on a small dataset significantly boosts performance,
-    \item scratch-trained models struggle to match foundation models without large datasets.
-\end{itemize}
+
+1. **MedSAM generalizes well** across unseen modalities, achieving strong zero-shot performance
+2. **Fine-tuning on a small dataset** significantly boosts performance, even for powerful foundation models
+3. **Scratch-trained models** struggle to match foundation models without large datasets
 
 Fine-tuned MedSAM provides the strongest segmentation quality, supporting the importance of specialization even for powerful foundation models.
 
-\section*{Authors}
-\textbf{Ashwin Ravichandran} \\
-\textbf{Rithvik Pranao Nagaraj} \\
-CS 747 -- Deep Learning \\
-Instructor: Prof. Daniel Barbara
+## Citation
 
-\end{document}
+If you use this code or find it helpful, please consider citing:
+
+```bibtex
+@misc{medsam_kvasir_2025,
+  title={Domain-Specific Fine-Tuning of MedSAM for Polyp Segmentation},
+  author={Ravichandran, Ashwin and Nagaraj, Rithvik Pranao},
+  year={2025},
+  note={CS 747 Deep Learning Project}
+}
+```
+
+## License
+
+This project is for educational purposes. Please refer to the original MedSAM and Segment Anything Model licenses for their respective components.
+
+## Acknowledgments
+
+- MedSAM: [Bowang Lab](https://github.com/bowang-lab/MedSAM)
+- Segment Anything Model: [Meta AI Research](https://github.com/facebookresearch/segment-anything)
+- Kvasir-SEG Dataset: [Kvasir Dataset](https://datasets.simula.no/kvasir-seg/)
